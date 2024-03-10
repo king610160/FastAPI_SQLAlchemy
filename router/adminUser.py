@@ -13,7 +13,38 @@ class userInfo(BaseModel):
 # router need to start with users
 router = APIRouter(prefix='/users')
 
-@router.put('/{id}/edit')
+@router.post('/create')
+def create_a_user(userInfo: userInfo):
+    # if fill the blank, need to get rid of it
+    userInfo.name = userInfo.name.strip()
+    userInfo.email = userInfo.email.strip()
+    userInfo.password = userInfo.password.strip()
+    # check the field are all fill the string, if not, return 400 bad request for not fill all fields
+    if not userInfo.name or not userInfo.email or not userInfo.password:
+        raise HTTPException(
+                status_code=400,
+                detail={'status': 'Fail', 'error-message': 'Please fill all the fields and not fill with blank.'}
+            )
+    # email need to be unique, so check database has this email or not, if has, return 400 with email existed
+    result = session.query(User).filter_by(email=userInfo.email).first()
+    print(result)
+    if result is not None:
+        raise HTTPException(
+                status_code=400,
+                detail={'status': 'Fail', 'error-message': 'Email has existed'}
+            )
+    # set the password to hashpassword for security
+    new_user = User(
+                    name = userInfo.name, 
+                    email = userInfo.email, 
+                    password =  hash_password(userInfo.password)
+                )
+    session.add(new_user)
+    session.commit()
+    newUser = session.get(User, new_user.id)
+    return {'status': 'Success', 'user': newUser}
+
+@router.put('/{id}')
 def edit_a_user(id: int, userInfo: userInfo):     
     # check if can get user, if cannot, return 404 with no this user
     getUser = session.get(User, id)
@@ -52,7 +83,7 @@ def edit_a_user(id: int, userInfo: userInfo):
     editUser = session.get(User, id)
     return {'status': 'Success', 'user': editUser}
 
-@router.delete('/{id}/delete')
+@router.delete('/{id}')
 def delete_a_user(id: int):
     # if can's find the user, then return 404 with no this user
     user = session.get(User, id)
@@ -64,37 +95,6 @@ def delete_a_user(id: int):
     session.delete(user)
     session.commit()
     return {'status': 'Success',}
-
-@router.post('/create')
-def create_a_user(userInfo: userInfo):
-    # if fill the blank, need to get rid of it
-    userInfo.name = userInfo.name.strip()
-    userInfo.email = userInfo.email.strip()
-    userInfo.password = userInfo.password.strip()
-    # check the field are all fill the string, if not, return 400 bad request for not fill all fields
-    if not userInfo.name or not userInfo.email or not userInfo.password:
-        raise HTTPException(
-                status_code=400,
-                detail={'status': 'Fail', 'error-message': 'Please fill all the fields and not fill with blank.'}
-            )
-    # email need to be unique, so check database has this email or not, if has, return 400 with email existed
-    result = session.query(User).filter_by(email=userInfo.email).first()
-    print(result)
-    if result is not None:
-        raise HTTPException(
-                status_code=400,
-                detail={'status': 'Fail', 'error-message': 'Email has existed'}
-            )
-    # set the password to hashpassword for security
-    new_user = User(
-                    name = userInfo.name, 
-                    email = userInfo.email, 
-                    password =  hash_password(userInfo.password)
-                )
-    session.add(new_user)
-    session.commit()
-    newUser = session.get(User, new_user.id)
-    return {'status': 'Success', 'user': newUser}
 
 @router.get('/{id}')
 def get_a_user(id: int):

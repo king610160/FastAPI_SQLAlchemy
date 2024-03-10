@@ -142,7 +142,7 @@ def test_edit_a_user():
     }
 
     # router go to /users to get_a_user
-    response = client.put('/users/1/edit', json=newUser)
+    response = client.put('/users/1', json=newUser)
     js = response.json()
     password = js['user']['password']
     result = check_password('password11', password)
@@ -157,7 +157,7 @@ def test_edit_a_user():
 # test delete user1
 def test_delete_user1():
     client = TestClient(app)
-    response = client.delete('/users/1/delete')
+    response = client.delete('/users/1')
 
     # check status_code and data
     assert response.status_code == 200
@@ -177,7 +177,7 @@ def test_delete_user1():
 # test delete not existed user
 def test_delete_not_existed_user():
     client = TestClient(app)
-    response = client.delete('/users/3/delete')
+    response = client.delete('/users/3')
 
     # check status_code and data
     assert response.status_code == 404
